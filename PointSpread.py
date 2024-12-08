@@ -1,6 +1,11 @@
 import cv2
 import numpy as np
 from scipy.signal import convolve2d
+from WeinerFilter import wiener_filter
+import PIL
+from PIL import Image
+import matplotlib.pyplot as plt
+
 
 def estimate_psf(length, angle):
     """
@@ -41,19 +46,23 @@ def main(input_image_path, output_image_path, psf_length=15, psf_angle=0.0):
     psf = estimate_psf(psf_length, psf_angle)
 
     # Deblur the image
-    deblurred_image = deblur_image(image, psf)
+    deblurred_image = wiener_filter(image, psf)
 
     # Save the deblurred image
     cv2.imwrite(output_image_path, deblurred_image)
     print(f"Deblurred image saved to {output_image_path}")
+    img = PIL.Image.open(output_image_path)
+    plt.imshow(img)
+    plt.show()
 
 if __name__ == "__main__":
     # Set file paths
-    input_path = "blurred_vinyl.jpg"  # Input image path
-    output_path = "deblurred_vinyl.jpg"  # Output image path
+    input_path = "images/IMG_20241208_124234494_BURST000_COVER.jpg"  # Input image path
+    #input_path = "images/ultraBlurred.jpg"  # Input image path
+    output_path = "output/deblurred_vinyl.jpg"  # Output image path
 
     # Customize PSF parameters
-    psf_length = 20  # Length of blur (approximate radius of the spinning vinyl blur)
-    psf_angle = np.pi / 2  # Direction of motion (vertical blur)
+    psf_length = 15  # Length of blur (approximate radius of the spinning vinyl blur)
+    psf_angle = -np.pi / 2  # Direction of motion (vertical blur)
 
     main(input_path, output_path, psf_length, psf_angle)
