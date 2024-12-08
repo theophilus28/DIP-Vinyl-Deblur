@@ -5,8 +5,10 @@ import cv2
 from scipy.fft import fft2
 from scipy import ndimage
 import matplotlib.pyplot as plt
+from PointSpread import estimate_psf
 
 ima = cv2.imread("images/Smeared_LP_Digital_Image_Processing_FA24.png")
+ima = cv2.cvtColor(ima, cv2.COLOR_BGR2RGB)
 center = [658,407]
 radius =380
 plt.imshow(ima)
@@ -14,13 +16,10 @@ plt.show()
 skima = sk.transform.warp_polar(ima, center=center, radius=radius, scaling='linear', channel_axis=-1)
 plt.imshow(skima)
 plt.show()
-psf = np.ones((5, 5)) / 25
-wienerima1 = sk.restoration.wiener(skima[:,:,0], psf, .2)
-wienerima2 = sk.restoration.wiener(skima[:,:,1], psf, .2)
-wienerima3 = sk.restoration.wiener(skima[:,:,2], psf, .2)
-wienerima = np.stack((wienerima1, wienerima2, wienerima3), axis= 2)
-plt.imshow(wienerima)
-plt.show()
+psf = estimate_psf(70, np.pi / 2)
+wienerima1 = sk.restoration.unsupervised_wiener(skima[:,:,0], psf)
+wienerima2 = sk.restoration.unsupervised_wiener(skima[:,:,1], psf)
+wienerima3 = sk.restoration.unsupervised_wiener(skima[:,:,2], psf)
 
 def polar_linear(imgin, o=None, r=None, output=None, order=1, cont=0):
     img = imgin.transpose()
@@ -39,6 +38,9 @@ def polar_linear(imgin, o=None, r=None, output=None, order=1, cont=0):
     ndimage.map_coordinates(img, (rs, ts), order=order, output=output)
     return output
 
-restoima = polar_linear(wienerima, r=radius)
+restoima1 = polar_linear(wienerima1[0], r=radius)
+restoima2 = polar_linear(wienerima2[0], r=radius)
+restoima3 = polar_linear(wienerima3[0], r=radius)
+restoima = np.stack((restoima1,restoima2, restoima3), axis=2)
 plt.imshow(restoima)
 plt.show()
